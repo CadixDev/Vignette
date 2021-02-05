@@ -12,6 +12,7 @@ import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
+
 import org.cadixdev.atlas.Atlas;
 import org.cadixdev.bombe.asm.jar.JarEntryRemappingTransformer;
 import org.cadixdev.lorenz.MappingSet;
@@ -56,6 +57,9 @@ public final class VignetteMain {
         final OptionSpec<Path> mappingsSpec = parser.acceptsAll(asList("mappings", "m"), "The mappings to remap with")
                 .withRequiredArg()
                 .withValuesConvertedBy(PathValueConverter.INSTANCE);
+        final OptionSpec<Integer> threadsSpec = parser.acceptsAll(asList("threads", "t"), "Number of threads to use when remapping")
+                .withOptionalArg()
+                .ofType(Integer.class);
 
         final OptionSet options;
         try {
@@ -109,7 +113,7 @@ public final class VignetteMain {
                 throw new RuntimeException("Failed to read input mappings!", ex);
             }
 
-            try (final Atlas atlas = new Atlas()) {
+            try (final Atlas atlas = createAtlas(options, threadsSpec)) {
                 atlas.install(ctx -> new JarEntryRemappingTransformer(new LorenzRemapper(
                         mappings,
                         ctx.inheritanceProvider()
@@ -131,6 +135,14 @@ public final class VignetteMain {
             }
             System.exit(-1);
         }
+    }
+
+    private static Atlas createAtlas(final OptionSet options, final OptionSpec<Integer> threadsSpec) {
+        if (options.has(threadsSpec)) {
+            return new Atlas(options.valueOf(threadsSpec));
+        }
+
+        return new Atlas();
     }
 
     private VignetteMain() {
