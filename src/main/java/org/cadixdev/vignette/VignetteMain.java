@@ -60,6 +60,9 @@ public final class VignetteMain {
         final OptionSpec<Integer> threadsSpec = parser.acceptsAll(asList("threads", "t"), "Number of threads to use when remapping")
                 .withOptionalArg()
                 .ofType(Integer.class);
+        final OptionSpec<Path> librarySpec = parser.acceptsAll(asList("library", "l"), "Library to add to the classpath for constructing inheritance")
+                .withOptionalArg()
+                .withValuesConvertedBy(PathValueConverter.INSTANCE);
 
         final OptionSet options;
         try {
@@ -114,6 +117,17 @@ public final class VignetteMain {
             }
 
             try (final Atlas atlas = createAtlas(options, threadsSpec)) {
+                if (options.has(librarySpec)) {
+                    for (final Path lib : options.valuesOf(librarySpec)) {
+                        try {
+                            atlas.use(lib);
+                        }
+                        catch (final IOException ex) {
+                            throw new RuntimeException("Failed to read library!", ex);
+                        }
+                    }
+                }
+
                 atlas.install(ctx -> new JarEntryRemappingTransformer(new LorenzRemapper(
                         mappings,
                         ctx.inheritanceProvider()
