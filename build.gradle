@@ -1,20 +1,17 @@
-buildscript {
-    repositories {
-        maven {
-            url 'https://plugins.gradle.org/m2/'
-        }
-    }
-    dependencies {
-        classpath 'com.github.jengelman.gradle.plugins:shadow:4.0.3'
-    }
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+
+    id 'com.github.johnrengelman.shadow' version '6.1.0'
 }
 
-apply plugin: 'java'
-apply plugin: 'maven'
-apply plugin: 'com.github.johnrengelman.shadow'
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
 
-sourceCompatibility = javaVersion
-targetCompatibility = javaVersion
+    withJavadocJar()
+    withSourcesJar()
+}
 
 group = 'org.cadixdev'
 archivesBaseName = project.name.toLowerCase()
@@ -38,93 +35,82 @@ processResources {
 jar {
     manifest {
         attributes(
-                'Implementation-Title': name,
-                'Implementation-Version': version,
+                'Implementation-Title': project.name,
+                'Implementation-Version': project.version,
+                'Implementation-Vendor': 'Cadix Development Team',
                 'Main-Class': 'org.cadixdev.vignette.VignetteMain'
         )
     }
 }
 
-task javadocJar(type: Jar, dependsOn: 'javadoc') {
-    from javadoc.destinationDir
-    classifier = 'javadoc'
-}
-
-task sourcesJar(type: Jar, dependsOn: 'classes') {
-    from sourceSets.main.allSource
-    classifier = 'sources'
-}
-
 artifacts {
     archives shadowJar
-    archives javadocJar
-    archives sourcesJar
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            artifactId = project.archivesBaseName
+            from components.java
+
+            pom {
+                name = project.name
+                description = project.description
+                packaging = 'jar'
+                url = project.url
+                inceptionYear = project.inceptionYear
+
+                scm {
+                    url = 'https://github.com/CadixDev/Vignette'
+                    connection = 'scm:git:https://github.com/CadixDev/Vignette.git'
+                    developerConnection = 'scm:git:git@github.com:CadixDev/Vignette.git'
+                }
+
+                issueManagement {
+                    system = 'GitHub'
+                    url = 'https://github.com/CadixDev/Vignette/issues'
+                }
+
+                licenses {
+                    license {
+                        name = 'Mozilla Public License 2.0'
+                        url = 'https://opensource.org/licenses/MPL-2.0'
+                        distribution = 'repo'
+                    }
+                }
+
+                developers {
+                    developer {
+                        id = 'jamierocks'
+                        name = 'Jamie Mansfield'
+                        email = 'jmansfield@cadixdev.org'
+                        url = 'https://www.jamiemansfield.me/'
+                        timezone = 'Europe/London'
+                    }
+                }
+            }
+        }
+    }
+    repositories {
+        if (project.hasProperty('ossrhUsername') && project.hasProperty('ossrhPassword')) {
+            maven {
+                url = !version.endsWith('-SNAPSHOT') ?
+                        'https://oss.sonatype.org/service/local/staging/deploy/maven2/' :
+                        'https://oss.sonatype.org/content/repositories/snapshots/'
+
+                credentials {
+                    username = ossrhUsername
+                    password = ossrhPassword
+                }
+            }
+        }
+    }
 }
 
 if (project.hasProperty('ossrhUsername') && project.hasProperty('ossrhPassword')) {
     apply plugin: 'signing'
     signing {
-        required { !version.endsWith('-SNAPSHOT') && gradle.taskGraph.hasTask(tasks.uploadArchives) }
-        sign configurations.archives
-    }
-}
-
-uploadArchives {
-    repositories {
-        mavenDeployer {
-            // Maven Central
-            if (project.hasProperty('ossrhUsername') && project.hasProperty('ossrhPassword')) {
-                beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-
-                repository(url: 'https://oss.sonatype.org/service/local/staging/deploy/maven2/') {
-                    authentication(userName: ossrhUsername, password: ossrhPassword)
-                }
-
-                snapshotRepository(url: 'https://oss.sonatype.org/content/repositories/snapshots/') {
-                    authentication(userName: ossrhUsername, password: ossrhPassword)
-                }
-            }
-
-            pom {
-                artifactId = project.archivesBaseName
-
-                project {
-                    name = project.name
-                    description = project.description
-                    packaging = 'jar'
-                    url = project.url
-                    inceptionYear = project.inceptionYear
-
-                    scm {
-                        url = 'https://github.com/CadixDev/Vignette'
-                        connection = 'scm:git:https://github.com/CadixDev/Vignette.git'
-                        developerConnection = 'scm:git:git@github.com:CadixDev/Vignette.git'
-                    }
-
-                    issueManagement {
-                        system = 'GitHub'
-                        url = 'https://github.com/CadixDev/Vignette/issues'
-                    }
-
-                    licenses {
-                        license {
-                            name = 'Mozilla Public License 2.0'
-                            url = 'https://opensource.org/licenses/MPL-2.0'
-                            distribution = 'repo'
-                        }
-                    }
-
-                    developers {
-                        developer {
-                            id = 'jamierocks'
-                            name = 'Jamie Mansfield'
-                            email = 'jmansfield@cadixdev.org'
-                            url = 'https://www.jamiemansfield.me/'
-                            timezone = 'Europe/London'
-                        }
-                    }
-                }
-            }
-        }
+        required { !version.endsWith('-SNAPSHOT') && gradle.taskGraph.hasTask(tasks.publish) }
+        sign publishing.publications.mavenJava
     }
 }
