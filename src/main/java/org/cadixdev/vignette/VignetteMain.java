@@ -33,6 +33,8 @@ import java.nio.file.Path;
  */
 public final class VignetteMain {
 
+    private static final String VERSION = "0.2.0-SNAPSHOT";
+
     public static void main(final String[] args) {
         final OptionParser parser = new OptionParser();
 
@@ -77,8 +79,8 @@ public final class VignetteMain {
         }
         else if (options.has(versionSpec)) {
             asList(
-                    "Vignette 0.1.0",
-                    "Copyright (c) 2019 Jamie Mansfield <https://www.jamiemansfield.me/>",
+                    "Vignette " + VERSION,
+                    "Copyright (c) 2019-2021 Jamie Mansfield <https://www.jamiemansfield.me/>",
                     // The following is adapted from a similar statement Mozilla make for Firefox
                     // See about:rights
                     "Vignette is made available under the terms of the Mozilla Public License 2.0, giving",
