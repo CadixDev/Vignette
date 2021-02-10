@@ -109,12 +109,12 @@ public final class VignetteMain {
                 throw new RuntimeException("Failed to read input mappings!", ex);
             }
 
-            final Atlas atlas = new Atlas();
-            atlas.install(ctx -> new JarEntryRemappingTransformer(new LorenzRemapper(
-                    mappings,
-                    ctx.inheritanceProvider()
-            )));
-            try {
+            try (final Atlas atlas = new Atlas()) {
+                atlas.install(ctx -> new JarEntryRemappingTransformer(new LorenzRemapper(
+                        mappings,
+                        ctx.inheritanceProvider()
+                )));
+
                 atlas.run(jarInPath, jarOutPath);
             }
             catch (final IOException ex) {
