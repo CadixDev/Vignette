@@ -57,6 +57,7 @@ public final class VignetteMain {
         final OptionSpec<Path> mappingsSpec = parser.acceptsAll(asList("mappings", "m"), "The mappings to remap with")
                 .withRequiredArg()
                 .withValuesConvertedBy(PathValueConverter.INSTANCE);
+        final OptionSpec<Void> reverseSpec = parser.acceptsAll(asList("reverse", "r"), "Reverses the mappings when applied");
         final OptionSpec<Integer> threadsSpec = parser.acceptsAll(asList("threads", "t"), "Number of threads to use when remapping")
                 .withOptionalArg()
                 .ofType(Integer.class);
@@ -129,7 +130,7 @@ public final class VignetteMain {
                 }
 
                 atlas.install(ctx -> new JarEntryRemappingTransformer(new LorenzRemapper(
-                        mappings,
+                        options.has(reverseSpec) ? mappings.reverse() : mappings,
                         ctx.inheritanceProvider()
                 )));
 
